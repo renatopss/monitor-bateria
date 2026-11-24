@@ -1,5 +1,8 @@
 .venv/
 .venv-dev/
+.venv-build/
+packaging/build/
+dist/
 __pycache__/
 .pytest_cache/
 *.log

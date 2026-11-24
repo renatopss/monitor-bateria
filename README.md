@@ -80,6 +80,18 @@ oficial também manda comandos que **alteram configuração**.
 
 ## Instalar e usar
 
+### Pelo instalador (recomendado)
+Baixe o `MonitorBateria-<versão>-setup.exe` em [Releases](https://github.com/renatopss/monitor-bateria/releases)
+e execute. Não precisa de Python nem de administrador: instala só para o seu usuário, em
+`%LOCALAPPDATA%\Programs\MonitorBateria`, com a opção de abrir junto com o Windows.
+
+> O executável não é assinado digitalmente, então o SmartScreen pode avisar na primeira vez:
+> "Mais informações" → "Executar assim mesmo".
+
+Para gerar o instalador a partir do código: `powershell -ExecutionPolicy Bypass -File packaging\build.ps1`
+(precisa de Python 3.10+ e do [Inno Setup 6](https://jrsoftware.org/isinfo.php)). Sai em `dist\`.
+
+### Pelo código-fonte
 1. Python 3.10+ (python.org, 64 bits).
 2. `instalar.bat` cria um ambiente isolado e instala só o `requirements.txt`, recusando pacote com hash errado.
 3. `ler-agora.bat` faz uma leitura única no terminal — bom para comparar com o app do fabricante.

@@ -100,8 +100,12 @@ Para gerar o instalador a partir do código: `powershell -ExecutionPolicy Bypass
 > Feche o app do fabricante (GameSir Connect / M HUB) se ele estiver segurando o dongle.
 
 ### Interface
-- **Widget** na barra de tarefas com o desenho de cada aparelho e o percentual (⚡ quando carregando).
-  Arraste para posicionar; botão direito abre o menu (**Atualizar agora**, **Editar cores…**, **Sair**).
+- **Bandeja**: um ícone por aparelho, só com o número, e um **contorno na cor do aparelho** para saber
+  quem é quem — controle **cinza**, mouse **dourado e preto**, headset **vermelho e preto**. O miolo segue a
+  cor da bateria e aparece ⚡ quando carregando. Botão direito: **Atualizar agora**, **Editar cores…**,
+  **Widget flutuante**, **Sair**.
+- **Widget flutuante** (opcional, desligado por padrão): liga/desliga pelo menu da bandeja, sem reiniciar.
+  Mostra o desenho de cada aparelho e o percentual; arraste para posicionar.
 - Cores: verde > 50 %, âmbar ≤ 50 %, vermelho ≤ 20 %, cinza sem leitura — todas editáveis.
 - Aviso abaixo de 20 %, uma vez só, até a bateria subir 10 pontos.
 
@@ -114,7 +118,11 @@ Para gerar o instalador a partir do código: `powershell -ExecutionPolicy Bypass
 ```
 
 - Intervalo aceito: 5 a 1440 min; valores inválidos voltam ao padrão.
-- `"widget": false` volta para um ícone por aparelho na bandeja; `"tray_mode": "unico"` usa um ícone só (menor bateria).
+- `"floating_widget": true` liga o widget flutuante (o mesmo que marcar no menu).
+- `"borders"`: contorno de cada tipo, cores de fora para dentro (até 3; `[]` = sem contorno), ex.
+  `{"controller": ["#9e9e9e"], "mouse": ["#d4af37", "#000000"], "headset": ["#e53935", "#000000"]}`.
+  Também editável em **Editar cores…**.
+- `"tray_mode": "unico"` usa um ícone só (menor bateria, sem contorno).
 - Log em `monitor.log` (200 KB, sem dados dos aparelhos).
 
 ## Limitações

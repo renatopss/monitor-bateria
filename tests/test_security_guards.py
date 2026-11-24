@@ -66,9 +66,10 @@ def test_no_banned_libs_in_requirements():
     assert not any(bad in req for bad in ("requests", "httpx", "urllib3", "aiohttp"))
 
 
-def test_dpi_and_icon_size_helpers_are_safe_off_windows():
+def test_dpi_and_icon_size_helpers_are_safe_off_windows(monkeypatch):
     from monitor_bateria.single_instance import enable_dpi_awareness, tray_icon_size
     assert enable_dpi_awareness() is None
+    monkeypatch.setattr("sys.platform", "linux")
     assert tray_icon_size() == 32 and tray_icon_size(24) == 24
 
 

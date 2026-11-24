@@ -23,6 +23,14 @@ COLOR_LABELS: dict[str, str] = {
     "bg": "Fundo do widget",
     "charge": "Raio (carregando)",
 }
+# Contorno da caixa do número na bandeja, por tipo de aparelho: cores de fora para dentro.
+DEFAULT_BORDERS: dict[str, list[str]] = {
+    "controller": ["#9e9e9e"],             # controle: cinza
+    "mouse": ["#d4af37", "#000000"],       # mouse: dourado e preto
+    "headset": ["#e53935", "#000000"],     # headset: vermelho e preto
+}
+BORDER_LABELS: dict[str, str] = {"controller": "Contorno controle", "mouse": "Contorno mouse", "headset": "Contorno headset"}
+MAX_BORDER_RINGS = 3
 DEFAULT_MID_PERCENT = 50
 MIN_MID, MAX_MID = 10, 90
 
@@ -53,6 +61,27 @@ def parse_colors(raw: object) -> dict[str, str]:
             if valid:
                 colors[key] = valid
     return colors
+
+
+def parse_border(raw: object) -> list[str] | None:
+    """Aceita lista de cores (ou texto '#a,#b'); vazio = sem contorno. Inválido = None."""
+    if isinstance(raw, str):
+        raw = [part for part in raw.replace(";", ",").split(",") if part.strip()]
+    if not isinstance(raw, list) or len(raw) > MAX_BORDER_RINGS:
+        return None
+    rings = [normalize_hex(v) for v in raw]
+    return None if any(r is None for r in rings) else rings  # type: ignore[return-value]
+
+
+def parse_borders(raw: object) -> dict[str, list[str]]:
+    """Só os tipos conhecidos com contornos válidos; o resto vira o padrão."""
+    borders = {k: list(v) for k, v in DEFAULT_BORDERS.items()}
+    if isinstance(raw, dict):
+        for kind in DEFAULT_BORDERS:
+            valid = parse_border(raw.get(kind))
+            if valid is not None:
+                borders[kind] = valid
+    return borders
 
 
 def clamp_mid(mid: int, low: int) -> int:

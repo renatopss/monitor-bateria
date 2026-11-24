@@ -11,7 +11,10 @@ from pathlib import Path
 from tkinter import colorchooser, messagebox
 from typing import Callable
 
-from .colors import COLOR_LABELS, DEFAULT_COLORS, DEFAULT_MID_PERCENT, Palette, clamp_mid, normalize_hex
+from .colors import (
+    BORDER_LABELS, COLOR_LABELS, DEFAULT_BORDERS, DEFAULT_COLORS, DEFAULT_MID_PERCENT, Palette, clamp_mid,
+    normalize_hex, parse_border,
+)
 from .config import load_config, save_colors
 from .icon import render_icon
 
@@ -42,6 +45,7 @@ def open_color_editor(
     hex_vars = {k: tk.StringVar(value=v) for k, v in config.colors.items()}
     mid_var = tk.IntVar(value=clamp_mid(config.mid_percent, config.low_battery_percent))
     style_var = tk.StringVar(value=config.icon_style)
+    border_vars = {k: tk.StringVar(value=", ".join(config.borders.get(k, []))) for k in BORDER_LABELS}
     swatches: dict[str, tk.Label] = {}
     previews: list[tuple[tk.Label, str, int | None]] = []
     keep: list[tk.PhotoImage] = []  # tk perde imagens sem referência
@@ -56,13 +60,22 @@ def open_color_editor(
             mid = DEFAULT_MID_PERCENT
         return Palette(colors, config.low_battery_percent, clamp_mid(mid, config.low_battery_percent))
 
+    def current_borders() -> dict[str, list[str]]:
+        out = {}
+        for kind, var in border_vars.items():
+            valid = parse_border(var.get())
+            out[kind] = valid if valid is not None else list(DEFAULT_BORDERS[kind])
+        return out
+
     def redraw(*_a) -> None:
         palette = current_palette()
+        borders = current_borders()
         keep.clear()
         for key, label in swatches.items():
             label.configure(bg=palette.colors[key])
         for label, kind, pct in previews:
-            photo = _photo(render_icon(pct, size=48, kind=kind or None, palette=palette, style=style_var.get()))
+            photo = _photo(render_icon(pct, size=48, kind=kind or None, palette=palette, style=style_var.get(),
+                                       border=borders.get(kind)))
             keep.append(photo)
             label.configure(image=photo)
 
@@ -86,6 +99,15 @@ def open_color_editor(
         entry.grid(row=i, column=2)
         entry.bind("<KeyRelease>", redraw)
     row = len(COLOR_LABELS) + 1
+    for kind, label in BORDER_LABELS.items():
+        tk.Label(frame, text=label).grid(row=row, column=0, sticky="w", pady=2)
+        entry = tk.Entry(frame, textvariable=border_vars[kind], width=20)
+        entry.grid(row=row, column=1, columnspan=2, sticky="w", padx=8)
+        entry.bind("<KeyRelease>", redraw)
+        row += 1
+    tk.Label(frame, text="Contorno: cores de fora para dentro, separadas por vírgula (vazio = sem contorno).",
+             fg="#555").grid(row=row, column=0, columnspan=3, sticky="w")
+    row += 1
     tk.Label(frame, text="“Média” vale até (%)").grid(row=row, column=0, sticky="w", pady=(8, 2))
     spin = tk.Spinbox(frame, from_=10, to=90, width=5, textvariable=mid_var, command=redraw)
     spin.grid(row=row, column=2, sticky="w", pady=(8, 2))
@@ -112,11 +134,12 @@ def open_color_editor(
     def save() -> None:
         palette = current_palette()
         bad = [COLOR_LABELS[k] for k, v in hex_vars.items() if not normalize_hex(v.get())]
+        bad += [BORDER_LABELS[k] for k, v in border_vars.items() if parse_border(v.get()) is None]
         if bad:
             messagebox.showerror("Cor inválida", "Use o formato #rrggbb em: " + ", ".join(bad), parent=root)
             return
         try:
-            save_colors(config_path, palette.colors, palette.mid_percent, style_var.get())
+            save_colors(config_path, palette.colors, palette.mid_percent, style_var.get(), current_borders())
         except OSError:
             messagebox.showerror("Erro", "Não consegui salvar o config.json.", parent=root)
             return
@@ -128,6 +151,8 @@ def open_color_editor(
         for key, value in DEFAULT_COLORS.items():
             hex_vars[key].set(value)
         mid_var.set(DEFAULT_MID_PERCENT)
+        for kind, rings in DEFAULT_BORDERS.items():
+            border_vars[kind].set(", ".join(rings))
         style_var.set("grande")
         redraw()
 
@@ -143,6 +168,7 @@ def open_color_editor(
         swatches.clear()
         keep.clear()
         hex_vars.clear()
+        border_vars.clear()
 
     redraw()
     if parent is not None:

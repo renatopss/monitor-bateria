@@ -51,6 +51,9 @@ def _draw_pictogram(draw: ImageDraw.ImageDraw, kind: str, fg, bg) -> None:
         draw.rounded_rectangle([45, 16, 55, 29], radius=3, fill=fg)
 
 
+# Espessura de cada anel do contorno (no canvas de 64 px): grosso o bastante para aparecer a 16 px.
+RING_WIDTHS = {1: (8,), 2: (6, 4), 3: (4, 3, 3)}
+
 BOLT_POINTS = [(38, 0), (10, 36), (28, 36), (22, 64), (54, 24), (35, 24), (46, 0)]
 
 
@@ -71,6 +74,7 @@ def render_icon(
     palette: Palette = DEFAULT_PALETTE,
     style: str = "completo",
     charging: bool = False,
+    border: list[str] | tuple[str, ...] | None = None,
 ) -> Image.Image:
     """`kind` None = só o número (ícone único); com `kind`, desenho em cima e número embaixo.
     style="lado": desenho à esquerda e número à direita. style="grande": ignora o desenho e usa o número enorme, em negrito, ocupando o ícone todo."""
@@ -80,7 +84,17 @@ def render_icon(
     bg, fg = palette.rgba_for(percent), palette.text_rgba()
     big = style == "grande"
     side = style == "lado" and kind in KINDS
-    draw.rounded_rectangle([0, 0, scale - 1, scale - 1], radius=scale // (10 if big else 6), fill=bg)
+    radius = scale // (10 if big else 6)
+    inset = 0
+    rings = [hex_to_rgba(c) for c in (border or ())]
+    if rings:  # contorno com a cor do aparelho (de fora para dentro), e a cor da bateria no miolo
+        widths = RING_WIDTHS.get(len(rings), (4,) * len(rings))
+        for color, width in zip(rings, widths):
+            draw.rounded_rectangle([inset, inset, scale - 1 - inset, scale - 1 - inset],
+                                   radius=max(2, radius - inset), fill=color)
+            inset += width
+    draw.rounded_rectangle([inset, inset, scale - 1 - inset, scale - 1 - inset],
+                           radius=max(2, radius - inset), fill=bg)
     text = "?" if percent is None else str(percent)
     if side:
         glyph = Image.new("RGBA", (scale, scale), (0, 0, 0, 0))
@@ -101,10 +115,11 @@ def render_icon(
         font_size, center_y = int(scale * (0.62 if len(text) < 3 else 0.46)), scale // 2
     font = _font(font_size, bold=big or side)
     if big or side:  # encolhe até o número caber inteiro na área, qualquer que seja a fonte
-        max_w = (scale - 30) if side else (scale - 6)
+        max_w = ((scale - 30) if side else (scale - 6)) - 2 * inset
+        max_h = scale - 6 - 2 * inset
         while font_size > 8:
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-            if right - left <= max_w and bottom - top <= scale - 6:
+            if right - left <= max_w and bottom - top <= max_h:
                 break
             font_size -= 2
             font = _font(font_size, bold=True)

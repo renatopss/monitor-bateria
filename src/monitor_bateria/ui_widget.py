@@ -1,4 +1,4 @@
-"""Widget na barra de tarefas (tkinter): desenho do aparelho + número ao lado, e ⚡ se estiver carregando.
+"""Widget flutuante opcional (tkinter): desenho do aparelho + número ao lado, e ⚡ se estiver carregando.
 
 Janela sem borda, sempre no topo, que o usuário arrasta até o lugar que quiser (a posição é salva).
 Botão direito: menu. Roda numa thread própria; o resto do app só conversa com ela por uma fila.
@@ -45,7 +45,9 @@ class TaskbarWidget:
         on_edit_colors: Callable[[], None],
         on_quit: Callable[[], None],
         hide_when: Callable[[], bool] | None = None,
+        on_hide: Callable[[], None] | None = None,
     ) -> None:
+        self._on_hide = on_hide
         self._config_path = config_path
         self._kinds = kinds
         self._palette = palette
@@ -141,6 +143,8 @@ class TaskbarWidget:
         refresh, edit, quit_ = self._callbacks
         self._menu.add_command(label="Atualizar agora", command=refresh)
         self._menu.add_command(label="Editar cores…", command=self._open_editor)
+        if self._on_hide is not None:
+            self._menu.add_command(label="Fechar widget (fica só a bandeja)", command=self._on_hide)
         self._menu.add_separator()
         self._menu.add_command(label="Sair", command=quit_)
         self._keep: list[tk.PhotoImage] = []

@@ -8,7 +8,10 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .colors import DEFAULT_COLORS, DEFAULT_MID_PERCENT, MAX_MID, MIN_MID, Palette, clamp_mid, parse_colors
+from .colors import (
+    DEFAULT_BORDERS, DEFAULT_COLORS, DEFAULT_MID_PERCENT, MAX_MID, MIN_MID, Palette, clamp_mid, parse_borders,
+    parse_colors,
+)
 
 log = logging.getLogger(__name__)
 
@@ -32,9 +35,12 @@ class Config:
     mid_percent: int = DEFAULT_MID_PERCENT
     icon_style: str = "grande"  # "completo" = desenho em cima; "lado" = desenho à esquerda; "grande" = só número
     game_mode: bool = True  # tela cheia: esconde o widget e não lê os aparelhos
-    widget: bool = True  # widget na barra de tarefas (ícone + número ao lado)
+    # widget flutuante (desenho + número, arrastável). Opcional e desligado por padrão: a bandeja basta.
+    # Chave nova ("floating_widget") de propósito: o "widget": true gravado pela 0.0.1 não religa nada.
+    widget: bool = False
     widget_pos: tuple[int, int] | None = None
     tray_mode: str = "separado"  # "separado" = um ícone por aparelho; "unico" = só o menor
+    borders: dict[str, list[str]] = field(default_factory=lambda: {k: list(v) for k, v in DEFAULT_BORDERS.items()})
 
     @property
     def palette(self) -> Palette:
@@ -84,9 +90,10 @@ def parse_config(raw: object) -> Config:
         mid_percent=_clamped_int(raw.get("mid_percent"), MIN_MID, MAX_MID, DEFAULT_MID_PERCENT),
         icon_style=raw.get("icon_style") if raw.get("icon_style") in ("completo", "grande", "lado") else "grande",
         game_mode=raw.get("game_mode") if isinstance(raw.get("game_mode"), bool) else True,
-        widget=raw.get("widget") if isinstance(raw.get("widget"), bool) else True,
+        widget=raw.get("floating_widget") if isinstance(raw.get("floating_widget"), bool) else False,
         widget_pos=_parse_pos(raw.get("widget_pos")),
         tray_mode=raw.get("tray_mode") if raw.get("tray_mode") in ("separado", "unico") else "separado",
+        borders=parse_borders(raw.get("borders")),
     )
 
 
@@ -112,10 +119,11 @@ def write_default_config(path: Path) -> None:
         "low_battery_percent": 20,
         "tray_mode": "separado",
         "icon_style": "grande",
-        "widget": True,
+        "floating_widget": False,
         "game_mode": True,
         "mid_percent": DEFAULT_MID_PERCENT,
         "colors": dict(DEFAULT_COLORS),
+        "borders": {k: list(v) for k, v in DEFAULT_BORDERS.items()},
         "devices": {"gamesir_nova2": True, "mchose_k7": True, "mchose_v9": True},
     }
     path.write_text(json.dumps(default, indent=2), encoding="utf-8")
@@ -145,10 +153,18 @@ def _update_raw(path: Path, mutate) -> None:
         raise
 
 
-def save_colors(path: Path, colors: dict[str, str], mid_percent: int, icon_style: str | None = None) -> None:
-    """Grava só as cores, o limite 'média' e o estilo, preservando o resto do arquivo."""
+def save_colors(
+    path: Path,
+    colors: dict[str, str],
+    mid_percent: int,
+    icon_style: str | None = None,
+    borders: dict[str, list[str]] | None = None,
+) -> None:
+    """Grava só as cores, o limite 'média', o estilo e os contornos, preservando o resto do arquivo."""
 
     def mutate(raw: dict) -> None:
+        if borders is not None:
+            raw["borders"] = parse_borders(borders)
         raw["colors"] = parse_colors(colors)
         raw["mid_percent"] = _clamped_int(mid_percent, MIN_MID, MAX_MID, DEFAULT_MID_PERCENT)
         if icon_style in ("completo", "grande", "lado"):
@@ -161,3 +177,7 @@ def save_widget_pos(path: Path, x: int, y: int) -> None:
     pos = _parse_pos([x, y])
     if pos is not None:
         _update_raw(path, lambda raw: raw.__setitem__("widget_pos", [pos[0], pos[1]]))
+
+
+def save_floating_widget(path: Path, enabled: bool) -> None:
+    _update_raw(path, lambda raw: raw.__setitem__("floating_widget", bool(enabled)))

@@ -1,0 +1,2 @@
+# Só para desenvolvimento e testes (não vai no app instalado)
+pytest>=8

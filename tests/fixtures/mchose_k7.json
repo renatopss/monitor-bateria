@@ -1,0 +1,20 @@
+{
+ "device_id": "mchose_k7",
+ "origem": "capturas USB cap2 e cap4 (23/11/2026) + teste ao vivo; 93% = M HUB mostrava 90% (arredonda para dezena)",
+ "valid": [
+  {"nome": "93% sem carregar (cap4)", "hex": "131dfefeffa2fdfbf9d7b4c8dfaa938b8d9effffff", "percent": 93},
+  {"nome": "93% carregando (cap4, cabo plugado)", "hex": "131dfefefea2fdfbf9d7b4c8dfaa938b8d9effffff", "percent": 93},
+  {"nome": "96% (cap2, M HUB mostrava 100%)", "hex": "131dfefeff9ffdfbf9d7b4c8dfaa938b8d9effffff", "percent": 96}
+ ],
+ "noise": [
+  "131af9ffffffffffffffffffffffffffffffffffff",
+  "131a97ffffffffffffffffffffffffffffffffffff",
+  "131afcffffffffffffffffffffffffffffffffffff"
+ ],
+ "invalid": [
+  {"nome": "cabecalho errado", "hex": "131cfefeffa2fdfbf9d7b4c8dfaa938b8d9effffff"},
+  {"nome": "bateria acima de 100", "hex": "131dfefeff00fdfbf9d7b4c8dfaa938b8d9effffff"},
+  {"nome": "flag de carga invalida", "hex": "131dfefe00a2fdfbf9d7b4c8dfaa938b8d9effffff"},
+  {"nome": "pacote curto", "hex": "131dfefe"}
+ ]
+}
